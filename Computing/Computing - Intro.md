@@ -9,7 +9,7 @@
    4. Tipos de Lenguajes
    5. Variables y Asignaciones
    6. Estructuras de datos
-   7. Árboles de Sintácticosxis
+   7. Árboles Sintácticos
    8. Comparaciones
    9. Bloques de Decisión 
    10. Bloque de Repetición
