@@ -225,5 +225,89 @@ We should see a message that contains the config object's name
 
    This time we see both the `SAVE` and `DELETE` events fired. We can see that the `statistics.settings` config object has been deleted, and the `core.extension`config object was saved.
 
+4. Message after uninstall of statics module should say:
+
+   > Deleted config: statics.settings
+   >
+   > Saved config: core.extension
+   >
+   > The selected modules have been uninstalled
 
 
+
+## My First Drupal 8 Event and Event Dispatch
+
+Steps:
+
+1. Decide:
+   1. what type of event we're going to dispatch
+   2. When we're going to dispatch 
+2. Create a new class that extends `Event`, we'll call the new class `UserLoginEvent`
+
+```php
+<?php
+
+namespace Drupal\custom_events\Event;
+
+use Drupal\user\UserInterface;
+use Symfony\Component\EventDispatcher\Event;
+
+/**
+ * Event that is fired when a user logs in.
+ */
+class UserLoginEvent extends Event {
+
+  const EVENT_NAME = 'custom_events_user_login';
+
+  /**
+   * The user account.
+   *
+   * @var \Drupal\user\UserInterface
+   */
+  public $account;
+
+  /**
+   * Constructs the object.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The account of the user logged in.
+   */
+  public function __construct(UserInterface $account) {
+    $this->account = $account;
+  }
+
+}
+```
+
+
+
+Where:
+
+- ``UserLoginEvent::EVENT_NAME`` is a constant with the value of ``'custom_events_user_login'``
+- The constructor for this event expects a `UserInterface`object and stores it as a property on the event, to make account object available to subscribers of this event
+
+### Custom_events.module
+
+```php
+use Drupal\custom_events\Event\UserLoginEvent;
+
+/**
+ * Implements hook_user_login().
+ */
+function custom_events_user_login($account) {
+  // Instantiate our event.
+  $event = new UserLoginEvent($account);
+
+  // Get the event_dispatcher server and dispatch the event.
+  $event_dispatcher = \Drupal::service('event_dispatcher');
+  $event_dispatcher->dispatch(UserLoginEvent::EVENT_NAME, $event);
+}
+```
+
+We only need to do a few things to dispatch our new event:
+
+1. Instantiate a new custom object named `UserLoginEvent` and provide its constructor the $account object available within the hook.
+2. Get the `event_dispatcher` service.
+3. Execute the `dispatch()` method on the `event_dispatcher` service. Provide the name of the event we're dispatching (`UserLoginEvent::EVENT_NAME`), and the event object we just created (`$event`).
+
+There we have it! We are now dispatching our custom event when a user is logged into Drupal.
