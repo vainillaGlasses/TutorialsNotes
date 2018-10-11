@@ -148,6 +148,12 @@ Create your preprocess paragraph function
 In paragraph.inc
 
 ```php
+<?php
+
+use Drupal\Core\Url;
+
+
+
 function barebones_bootstrap_STARTERKIT_preprocess_paragraph(&$vars) {
 
   //ksm($vars);
