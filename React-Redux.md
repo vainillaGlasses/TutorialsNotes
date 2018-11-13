@@ -298,3 +298,239 @@ Run
 npm i react-redux --save-dev
 ```
 
+
+
+**What does mapStateToProps do** in react-redux? mapStateToProps does exactly what its name suggests: it **connects a part of the Redux state** to the [props of a React component](https://reactjs.org/docs/components-and-props.html). By doing so a connected React component will have access to the exact part of the store it needs.
+
+
+
+**What does mapDispatchToProps** do in react-redux? mapDispatchToProps does something similar, but for actions. **mapDispatchToProps connects Redux actions to React props**. This way a connected React component will be able to dispatch actions.
+
+
+
+## App
+
+Create a directory for holding the components:
+
+1. mkdir -p src/js/components
+
+and a new file named App.jsinside src/js/components:
+
+```js
+// src/js/components/App.js
+import React from "react";
+import List from "./List";
+
+const App = () => (
+  <div className="row mt-5">
+    <div className="col-md-4 offset-md-1">
+    <h2>Articles</h2>
+      <List />
+    </div>
+  </div>
+);
+
+export default App;
+```
+
+Take moment and look at the component without the markup:
+
+```js
+import React from "react";
+import List from "./List";
+
+const App = () => (
+      <List />
+);
+
+export default App;
+```
+
+then move on to creating **List**.
+
+
+
+## List component and Redux state
+
+Create a new file named List.jsinside src/js/components. It should look like the following:
+
+```js
+// src/js/components/List.js
+
+import React from "react";
+import { connect } from "react-redux";
+
+const mapStateToProps = state => {
+  return { articles: state.articles };
+};
+
+const ConnectedList = ({ articles }) => (
+  <ul className="list-group list-group-flush">
+    {articles.map(el => (
+      <li className="list-group-item" key={el.id}>
+        {el.title}
+      </li>
+    ))}
+  </ul>
+);
+
+const List = connect(mapStateToProps)(ConnectedList);
+
+export default List;
+```
+
+The List component receives the prop articleswhich is a copy of the articlesarray. Such array lives inside the Redux state we created earlier. It comes from the reducer:
+
+```js
+const initialState = {
+  articles: []
+};
+
+const rootReducer = (state = initialState, action) => {
+  switch (action.type) {
+    case ADD_ARTICLE:
+      return { ...state, articles: [...state.articles, action.payload] };
+    default:
+      return state;
+  }
+};
+```
+
+Then it’s a matter of using the prop inside JSX for generating a list of articles:
+
+```js
+{articles.map(el => (
+  <li className="list-group-item" key={el.id}>
+    {el.title}
+  </li>
+))}
+```
+
+
+
+## Form component and Redux actions
+
+**Not every piece of the application’s state should go inside Redux.**
+
+Create a new file named Form.jsinside src/js/components. It should look like the following:
+
+```js
+// src/js/components/Form.js
+import React, { Component } from "react";
+import { connect } from "react-redux";
+import uuidv1 from "uuid";
+import { addArticle } from "../actions/index";
+
+const mapDispatchToProps = dispatch => {
+  return {
+    addArticle: article => dispatch(addArticle(article))
+  };
+};
+
+class ConnectedForm extends Component {
+  constructor() {
+    super();
+
+    this.state = {
+      title: ""
+    };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleChange(event) {
+    this.setState({ [event.target.id]: event.target.value });
+  }
+
+  handleSubmit(event) {
+    event.preventDefault();
+    const { title } = this.state;
+    const id = uuidv1();
+    this.props.addArticle({ title, id });
+    this.setState({ title: "" });
+  }
+
+  render() {
+    const { title } = this.state;
+    return (
+      <form onSubmit={this.handleSubmit}>
+        <div className="form-group">
+          <label htmlFor="title">Title</label>
+          <input
+            type="text"
+            className="form-control"
+            id="title"
+            value={title}
+            onChange={this.handleChange}
+          />
+        </div>
+        <button type="submit" className="btn btn-success btn-lg">
+          SAVE
+        </button>
+      </form>
+    );
+  }
+}
+
+const Form = connect(null, mapDispatchToProps)(ConnectedForm);
+
+export default Form;
+```
+
+
+
+**mapDispatchToProps connects Redux actions to React props**
+
+```js
+// ...
+  handleSubmit(event) {
+    event.preventDefault();
+    const { title } = this.state;
+    const id = uuidv1();
+    this.props.addArticle({ title, id }); // Relevant Redux part!!
+// ...
+  }
+// ...
+```
+
+This way a connected component is able to dispatch actions.
+
+
+
+Update App to include the Form component:
+
+```js
+import React from "react";
+import List from "./List";
+import Form from "./Form";
+
+const App = () => (
+  <div className="row mt-5">
+    <div className="col-md-4 offset-md-1">
+      <h2>Articles</h2>
+      <List />
+    </div>
+    <div className="col-md-4 offset-md-1">
+      <h2>Add a new article</h2>
+      <Form />
+    </div>
+  </div>
+);
+
+export default App;
+```
+
+Install uuid with:
+
+```bash
+npm i uuid --save-dev
+```
+
+Now run webpack (or Parcel) with:
+
+```bash
+npm start
+```
+
+and head over to http://localhost:8080
